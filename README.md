@@ -1,5 +1,5 @@
 # GO Auth Service
-This is a simple authentication service that uses Google OAuth2.0 to authenticate users. It is built using Golang and the Gin framework.
+This is a simple authentication service that use OAuth2.0 to authenticate users. It is built using Golang and the Gin framework.
 
 ## Installation
 
