@@ -57,6 +57,25 @@ func main() {
 	}
 }
 
+func ConnectRedis() (*redis.Client, error) {
+	redisHost = os.Getenv("REDIS_HOST")
+	redisPort = os.Getenv("REDIS_PORT")
+	redisPass = os.Getenv("REDIS_PASS")
+
+	client := redis.NewClient(&redis.Options{
+		Addr:     redisHost + ":" + redisPort,
+		Password: redisPass,
+		DB:       0,
+	})
+
+	_, err := client.Ping(context.Background()).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
 func Login(c *gin.Context) {
 	w := c.Writer
 	r := c.Request
@@ -76,16 +95,11 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	redisHost = os.Getenv("REDIS_HOST")
-	redisPort = os.Getenv("REDIS_PORT")
-	redisPass = os.Getenv("REDIS_PASS")
-
-	client := redis.NewClient(&redis.Options{
-		Addr:     redisHost + ":" + redisPort,
-		Password: redisPass,
-		DB:       0,
-	})
-
+	client, err := ConnectRedis()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error connecting to Redis"})
+		return
+	}
 	ctx := context.Background()
 
 	userData := client.HGetAll(ctx, fmt.Sprintf("redis-user:%d", userID)).Val()
@@ -135,16 +149,11 @@ func TestProtected(c *gin.Context) {
 }
 
 func TestRedis(c *gin.Context) {
-	redisHost = os.Getenv("REDIS_HOST")
-	redisPort = os.Getenv("REDIS_PORT")
-	redisPass = os.Getenv("REDIS_PASS")
-
-	client := redis.NewClient(&redis.Options{
-		Addr:     redisHost + ":" + redisPort,
-		Password: redisPass,
-		DB:       0,
-	})
-
+	client, err := ConnectRedis()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error connecting to Redis"})
+		return
+	}
 	ctx := context.Background()
 
 	session := map[string]string{
