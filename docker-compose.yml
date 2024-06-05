@@ -12,6 +12,7 @@ services:
       - .:/usr/src/app
     command: air ./cmd/main.go -b
     depends_on:
+      - mysql
       - redis
 
   redis:
@@ -20,3 +21,17 @@ services:
     volumes:
       - ./docker/data/redis:/data
     restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: go-auth-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_PASS}"
+      MYSQL_DATABASE: "${DB_NAME}"
+    volumes:
+      - ./docker/data/db:/var/lib/mysql
+    ports:
+      - "3305:3306"
+
+volumes:
+  mysql-db:

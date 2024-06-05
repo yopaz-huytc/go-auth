@@ -8,13 +8,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 )
 
 var secretKey = []byte("secret-key")
 
-func CreateToken(userID int) (string, error) {
+func CreateToken(userUid string) (string, error) {
 	appUrl := os.Getenv("APP_URL")
 	jti := make([]byte, 16)
 	_, err := rand.Read(jti)
@@ -28,8 +27,7 @@ func CreateToken(userID int) (string, error) {
 			"exp": time.Now().Add(time.Hour * 24).Unix(),
 			"nbf": time.Now().Unix(),
 			"jti": hex.EncodeToString(jti),
-			"sub": userID,
-			"prv": "23bd5c8949f600adb39e701c400872db7a5976f7",
+			"sub": userUid,
 		})
 	tokenString, err := token.SignedString(secretKey)
 	if err != nil {
@@ -43,6 +41,7 @@ func verifyToken(tokenString string) (jwt.MapClaims, error) {
 		return secretKey, nil
 	})
 	if err != nil {
+
 		return nil, err
 	}
 	if !token.Valid {
@@ -52,14 +51,11 @@ func verifyToken(tokenString string) (jwt.MapClaims, error) {
 }
 
 func RefreshToken(c *gin.Context) {
-	w := c.Writer
-	r := c.Request
-	w.Header().Set("Content-Type", "application/json")
-
-	refreshToken := r.Header.Get("Authorization")
+	c.Writer.Header().Set("Content-Type", "application/json")
+	refreshToken := c.Request.Header.Get("Authorization")
 	if refreshToken == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		_, err := fmt.Fprint(w, "Missing authorization header")
+		c.Writer.WriteHeader(http.StatusUnauthorized)
+		_, err := fmt.Fprint(c.Writer, "Missing authorization header")
 		if err != nil {
 			return
 		}
@@ -69,27 +65,24 @@ func RefreshToken(c *gin.Context) {
 
 	claims, err := verifyToken(refreshToken)
 	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		_, err := fmt.Fprint(w, "Invalid token")
+		c.Writer.WriteHeader(http.StatusUnauthorized)
+		_, err := fmt.Fprint(c.Writer, "Invalid token")
 		if err != nil {
 			return
 		}
 		return
 	}
 
-	userID := fmt.Sprintf("%.0f", claims["sub"].(float64))
-
-	userIDInt, err := strconv.Atoi(userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error converting user ID to integer"})
-		return
-	}
-
-	newToken, err := CreateToken(userIDInt)
+	userUid := claims["sub"].(string)
+	newToken, err := CreateToken(userUid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating token"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": newToken})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Token refreshed successfully",
+		"token":   newToken,
+		"userUid": userUid,
+	})
 }
