@@ -19,6 +19,7 @@ This is a simple authentication service that use OAuth2.0 to authenticate users.
 ## Usage
 1. cp .env.example .env
 2. config your .env file
-3. `localhost:3333/redis` to check if redis is running and post test data
-4. `localhost:3333/login` to login to app with test data, json raw is: { "id": 1 } 
-5. `localhost:3333/user-info` to test if you are logged in with jwt token
+3. `localhost:3333/login` to login to app, json request is: { "uid": "current_uid" } 
+4. `localhost:3333/user-info` to test if you are logged in with jwt token
+5. `localhost:3333/refresh` to refresh jwt token
+6. `localhost:3333/logout` to logout
