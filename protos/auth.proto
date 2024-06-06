@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option go_package = "/protos/auth";
+
+package auth;
+
+service AuthService {
+  // login user by user uid and response with token
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+  // refresh token
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {}
+}
+
+message LoginRequest {
+  string uid = 1;
+}
+
+// response token and all user info
+message LoginResponse {
+  string token = 1;
+  string uid = 2;
+  string email = 3;
+  string name = 4;
+}
+
+message RefreshTokenRequest {
+  string token = 1;
+}
+
+message RefreshTokenResponse {
+  string token = 1;
+  string uid = 2;
+}
