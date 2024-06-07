@@ -38,7 +38,7 @@ func ConnectRedis() (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     redisHost + ":" + redisPort,
 		Password: redisPass,
-		DB:       0,
+		DB:       1,
 	})
 
 	_, err := client.Ping(context.Background()).Result()

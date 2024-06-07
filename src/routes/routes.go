@@ -12,6 +12,7 @@ func Routes() {
 	router.POST("/login", controllers.Login)
 	router.GET("/user-info", controllers.GetUserByToken)
 	router.POST("/refresh", controllers.RefreshToken)
+	router.POST("/logout", controllers.Logout)
 
 	err := router.Run()
 	if err != nil {
