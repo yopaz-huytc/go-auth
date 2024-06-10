@@ -52,7 +52,10 @@ func Login(c *gin.Context) {
 
 	err = client.SAdd(ctx, "whiteListToken", tokenString).Err()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error adding token to whitelist"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": http.StatusUnauthorized,
+			"error":  "Error adding token to whitelist",
+		})
 		return
 	}
 
@@ -84,11 +87,14 @@ func GetUserByToken(c *gin.Context) {
 	tokenString = tokenString[len("Bearer "):]
 
 	oldToken := tokenString
-
+	fmt.Println(oldToken)
 	// Check if the old token is in the whitelist
 	isMember := client.SIsMember(ctx, "whiteListToken", oldToken).Val()
 	if !isMember {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token is not in the whitelist"})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status": http.StatusUnauthorized,
+			"error":  "Token is not in the whitelist",
+		})
 		return
 	}
 
@@ -209,7 +215,6 @@ func DeserializedCacheValue(cacheValue string) ([]string, error) {
 func Logout(c *gin.Context) {
 	// Get the token from the Authorization header
 	tokenString := c.Request.Header.Get("Authorization")
-	fmt.Println("Token: ", tokenString)
 	if tokenString == "" {
 		c.Writer.WriteHeader(http.StatusUnauthorized)
 		_, err := fmt.Fprint(c.Writer, "Missing authorization header")
@@ -232,14 +237,20 @@ func Logout(c *gin.Context) {
 	// Check if the old token is in the whitelist
 	isMember := client.SIsMember(ctx, "whiteListToken", oldToken).Val()
 	if !isMember {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token is not in the whitelist"})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status": http.StatusUnauthorized,
+			"error":  "Token is not in the whitelist",
+		})
 		return
 	}
 
 	// Remove the token from the whitelist
 	err = client.SRem(ctx, "whiteListToken", oldToken).Err()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error removing token from whitelist"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": http.StatusUnauthorized,
+			"error":  "Error removing token from whitelist",
+		})
 		return
 	}
 

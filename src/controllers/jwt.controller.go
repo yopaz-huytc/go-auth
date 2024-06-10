@@ -65,8 +65,7 @@ func verifyToken(tokenString string) (jwt.MapClaims, error) {
 func RefreshToken(c *gin.Context) {
 	var reqBody RequestBody
 	if err := c.BindJSON(&reqBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-		return
+		ErrorHandler(c, http.StatusBadRequest, err)
 	}
 	ttl := reqBody.TTL
 	if ttl == 0 {
@@ -88,15 +87,14 @@ func RefreshToken(c *gin.Context) {
 
 	client, err := config.ConnectRedis()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error connecting to Redis"})
+		ErrorHandler(c, http.StatusInternalServerError, err)
 		return
 	}
 	ctx := context.Background()
 	// Check if the old token is in the whitelist
-	fmt.Println("Old Token: ", oldToken)
 	isMember := client.SIsMember(ctx, "whiteListToken", oldToken).Val()
 	if !isMember {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token is not in the whitelist"})
+		ErrorHandler(c, http.StatusUnauthorized, fmt.Errorf("token is not in the whitelist"))
 		return
 	}
 
@@ -113,20 +111,20 @@ func RefreshToken(c *gin.Context) {
 	userId := claims["sub"].(float64)
 	newToken, err := CreateToken(int(userId), ttl)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating token"})
+		ErrorHandler(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	// Remove the old token from the whitelist and add the new one
 	err = client.SRem(ctx, "whiteListToken", oldToken).Err()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error removing old token from whitelist"})
+		ErrorHandler(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	err = client.SAdd(ctx, "whiteListToken", newToken).Err()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error adding new token to whitelist"})
+		ErrorHandler(c, http.StatusInternalServerError, err)
 		return
 	}
 
